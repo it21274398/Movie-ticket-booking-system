@@ -5,9 +5,10 @@ import com.ticket.app.service.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/movies")
@@ -16,31 +17,44 @@ public class MovieController {
     @Autowired
     private MovieService movieService;
 
-    @GetMapping
+    // Add Movie with image
+    @PostMapping("/add")
+    public ResponseEntity<Movie> addMovie(
+            @RequestParam("name") String name,
+            @RequestParam("genre") String genre,
+            @RequestParam("director") String director,
+            @RequestParam("year") Integer year,
+            @RequestParam("image") MultipartFile image) throws IOException {
+
+        Movie movie = new Movie(name, genre, director, year, image.getBytes());
+        return ResponseEntity.ok(movieService.saveMovie(movie));
+    }
+
+    // Get all movies
+    @GetMapping("/all")
     public List<Movie> getAllMovies() {
         return movieService.getAllMovies();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Movie> getMovieById(@PathVariable Long id) {
-        Optional<Movie> movie = movieService.getMovieById(id);
-        return movie.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    // Update Movie with image
+    @PutMapping("/update/{id}")
+    public ResponseEntity<Movie> updateMovie(
+            @PathVariable Long id,
+            @RequestParam("name") String name,
+            @RequestParam("genre") String genre,
+            @RequestParam("director") String director,
+            @RequestParam("year") Integer year,
+            @RequestParam("image") MultipartFile image) throws IOException {
+
+        Movie movie = new Movie(name, genre, director, year, image.getBytes());
+        movie.setId(id);
+        return ResponseEntity.ok(movieService.saveMovie(movie));
     }
 
-    @PostMapping
-    public Movie addMovie(@RequestBody Movie movie) {
-        return movieService.saveMovie(movie);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Movie> updateMovie(@PathVariable Long id, @RequestBody Movie updatedMovie) {
-        Movie movie = movieService.updateMovie(id, updatedMovie);
-        return movie != null ? ResponseEntity.ok(movie) : ResponseEntity.notFound().build();
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMovie(@PathVariable Long id) {
+    // Delete Movie
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<String> deleteMovie(@PathVariable Long id) {
         movieService.deleteMovie(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("Movie deleted successfully");
     }
 }
